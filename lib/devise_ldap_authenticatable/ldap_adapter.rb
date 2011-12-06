@@ -4,11 +4,13 @@ module Devise
 
   module LdapAdapter
     
-    def self.valid_credentials?(login, password_plaintext)
+    def self.valid_credentials?(login, password_plaintext, connection_options = {})
       options = {:login => login, 
                  :password => password_plaintext, 
                  :ldap_auth_username_builder => ::Devise.ldap_auth_username_builder,
                  :admin => ::Devise.ldap_use_admin_to_bind}
+                 
+      options.merge! connection_options
                  
       resource = LdapConnect.new(options)
       resource.authorized?
@@ -62,7 +64,7 @@ module Devise
       attr_reader :ldap, :login
 
       def initialize(params = {})
-        ldap_config = YAML.load(ERB.new(File.read(::Devise.ldap_config || "#{Rails.root}/config/ldap.yml")).result)[Rails.env]
+        ldap_config = YAML.load(ERB.new(File.read(params[:ldap_config] || ::Devise.ldap_config || "#{Rails.root}/config/ldap.yml")).result)[Rails.env]
         ldap_options = params
         ldap_config["ssl"] = :simple_tls if ldap_config["ssl"] === true
         ldap_options[:encryption] = ldap_config["ssl"].to_sym if ldap_config["ssl"]
